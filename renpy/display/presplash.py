@@ -206,6 +206,8 @@ def end():
     global progress_bar
     progress_bar = None
 
+    pygame_sdl2.display.quit()
+
 
 def sleep():
     """
@@ -246,14 +248,12 @@ def progress(kind, done, total):
     if done == total:
         return
 
-    if not PY2:
+    if progress_kind != kind:
+        print()
+        print(kind)
+        progress_kind = kind
+        sys.stdout.flush()
 
-        if progress_kind != kind:
-            print()
-            print(kind)
-            progress_kind = kind
-            sys.stdout.flush()
-
-        emscripten.run_script(r"""progress(%d, %d);""" % (done, total))
+    emscripten.run_script(r"""progress(%d, %d);""" % (done, total))
 
     emscripten.sleep(0)

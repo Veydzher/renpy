@@ -173,11 +173,7 @@ init -1500 python:
             self.url = url
 
         def __call__(self):
-            try:
-                import webbrowser
-                webbrowser.open_new(self.url)
-            except Exception:
-                pass
+            renpy.open_url(self.url)
 
     class With(Action, DictEquality):
         """
@@ -548,12 +544,8 @@ init -1500 python:
             if type(self) is not type(other):
                 return False
 
-            if PY2:
-                if self.callable is not other.callable:
-                    return False
-            else:
-                if self.callable != other.callable:
-                    return False
+            if self.callable != other.callable:
+                return False
 
             if self.args != other.args:
                 return False

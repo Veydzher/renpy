@@ -40,7 +40,7 @@ import pygame_sdl2
 try:
     import emscripten
 except ImportError:
-    pass
+    emscripten = None
 
 import renpy.audio.sound as sound
 import renpy.audio.music as music
@@ -111,6 +111,10 @@ from renpy.display.minigame import (
 
 from renpy.display.predict import (
     screen as predict_screen,
+)
+
+from renpy.display.scenelists import (
+    layer_has_transforms,
 )
 
 from renpy.display.screen import (
@@ -325,6 +329,7 @@ from renpy.exports.contextexports import (
     get_mode,
     get_return_stack,
     get_skipping,
+    get_statement_name,
     invoke_in_new_context,
     is_init_phase,
     is_skipping,
@@ -335,6 +340,7 @@ from renpy.exports.contextexports import (
     pop_return,
     scry,
     set_return_stack,
+    stop_skipping,
 )
 
 from renpy.exports.debugexports import (
@@ -483,6 +489,7 @@ from renpy.exports.persistentexports import (
     mark_image_unseen,
     save_persistent,
     is_seen,
+    is_seen_allowed,
 )
 
 from renpy.exports.platformexports import (
@@ -495,6 +502,7 @@ from renpy.exports.platformexports import (
     request_permission,
     variant,
     vibrate,
+    open_url,
 )
 
 from renpy.exports.predictexports import (

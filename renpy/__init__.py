@@ -223,7 +223,6 @@ backup_blacklist = {
     "renpy.test.testmouse",
     "renpy.test.testparser",
     "renpy.gl2",
-    "renpy.gl",
     "renpycoverage",
     }
 
@@ -405,12 +404,9 @@ def import_all():
     # Adds in the Ren'Py loader.
     import renpy.loader
 
-    if not PY2:
-        import renpy.py3analysis
-    else:
-        import renpy.py2analysis
-
     import renpy.pyanalysis
+    sys.modules["renpy.py3analysis"] = renpy.pyanalysis
+
     import renpy.parameter
 
     import renpy.ast
@@ -479,7 +475,6 @@ def import_all():
 
     sys.modules[pystr('renpy.display.text')] = renpy.text.text
 
-    import renpy.gl
     import renpy.gl2
 
     import renpy.display.layout
@@ -722,8 +717,6 @@ if 1 == 0:
     from . import performance
     from . import persistent
     from . import preferences
-    from . import py2analysis
-    from . import py3analysis
     from . import pyanalysis
     from . import pydict
     from . import python

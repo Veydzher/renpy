@@ -4,6 +4,162 @@ Changelog (Ren'Py 7.x-)
 
 *There is also a list of* :doc:`incompatible changes <incompatible>`
 
+
+.. _renpy-8.4.0:
+
+8.4.0
+=====
+
+Requirement and Dependency Changes
+----------------------------------
+
+Ren'Py now requires Windows 10 or later to run. This means that it will no longer run on Windows 7, 8, or 8.1.
+
+Ren'Py is no longer built for 32-bit ARM linux. This drops support for the Raspberry Pi 3, and very old Chromebooks.
+Ren'Py is still being built for 32-bit ARM Android.
+
+Features
+--------
+
+The :ref:`input <sl-input>` displayable now takes an `arrowkeys` property, which controls whether the arrow keys
+can be used to move the cursor in the input, or are used to move the focus between displayables.
+
+The :var:`config.translate_additional_strings_callbacks` callbacks make it possible for a game to offer
+additional to be added to translation files. (For example, strings from third-party libraries or data files.)
+
+The :func:`___` (triple underscore) function makes it possible translate a string, and then
+apply :ref:`text interpolation <text-interpolation>` to the result. Interpolations occur in the scope of
+that the function is called from. The triple underscore function also marks the string contained
+inside for translation.
+
+Other Changes
+-------------
+
+The ``show expression`` statement has changed so that ``show expression "bg washington"`` is equivalent
+to ``show bg washington``. Previously, the expression would be used as a tag, which would rarely be correct.
+If a displayable is given instead of a string, a tag will be generated.
+
+One the web platform, :var:`renpy.emscripten` is the emscripten module, making it available
+without needing to import it. You should still check that :var:`renpy.emscripten` is true before using it.
+
+When :var:`config.nearest_neighbor` is true, image fonts are scaled using nearest neighbor scaling,
+rather than the default bilinear scaling.
+
+The "Image Attributes" screen also indicates if transforms are applied to a layer, as it can be hard
+to determine otherwise.
+
+
+.. _renpy-8.3.4:
+.. _renpy-7.8.4:
+
+Other Changes
+-------------
+
+The new :func:`renpy.get_statement_name` function returns the name of the currently
+executing Ren'Py statement, the same name given to :var:`config.statement_callbacks`.
+
+
+.. _renpy-8.3.3:
+.. _renpy-7.8.3:
+
+Fixes
+-----
+
+Empty masked inputs no longer show a single mask glyph.
+
+If a :class:`Movie` has a transform as its `image` or `show_image`, that transform
+is reset each time the movie is shown.
+
+The :var:`config.nvl_adv_transition` no longer forces the dialogue window to be hidden.
+
+Screens that are used by another screen are now updated properly if the interaction restarts
+before the screen is first rendered.
+
+The :func:`achievement.steam.get_session_ticket` function now works as documented.
+
+Changes to audio filters take place immediately after reload.
+
+:var:`config.skip_sounds` now works as documented.
+
+:class:`Model` now creates meshes as described in the documentation when no textures are supplied.
+
+The image attributes screen now quotes image and displayable names.
+
+An issue with rollback not restarting music has been fixed.
+
+Underlines and strikethroughs will not be broken when drawn using harfbuzz-based text shaping.
+
+Ren'Py now ensures that IMEs are activated on the primary window when the game starts, rather than on
+a presplash window.
+
+Bars no longer lose the ``selected_hover`` prefix when adjusted using keyboard or game controller.
+
+Rounding errors during pixel perfect text positioning have been fixed. These errors could cause text to
+jump 1 pixel during dissolves.
+
+The rarely-used ``gl_anisotropic`` transform property now works.
+
+The :propref:`keyboard_focus_insets` property now works as documented.
+
+A rounding issue that could cause :propref:`bar_invert` to stop working has been fixed.
+
+Ren'Py will render a displayable a second time if :propref:`box_wrap` is True, to ensure that the displayable
+is offered the correct amount of space when wrapped to a second line. In rare cases, this could change layout.
+
+Controller events can now cause Ren'Py to focus a displayable with `default_focus` set. Previously, these
+events weren't considered inputs by the focus system.
+
+There have been a number of fixes to the way Ren'Py handles dragging a viewport filled with buttons.
+
+A drag may now contain a draggable viewport, allowing a window to be more directly emulated.
+
+Other Changes
+-------------
+
+Android bundles now use install-time assets packs, rather than fast-follow packs, to ensure that all assets
+are available when the game is run.
+
+An :class:`AlphaMask` will now cause mask transformations to restart each time it is shown.
+
+Displayables zoomed down to 0 pixels big will no longer get focus.
+
+The "always" option to _renpysteam.keyboard_mode is no longer supported. If given, the "once" mode is
+used, requiring the player to explicitly request the Steam Deck keyboard when required.
+
+The number of frames that Ren'Py passes through the rendering pipeline before switching to powersave
+mode has been increased to 12, to ensure that frames make it through compositors in a timely manner.
+
+Ren'Py locks the image cache less, which should prevent some frame drops when loading images.
+
+Synchronized start of audio/video no longer occurs on movie channels unless explicitly requested.
+
+When rolling back to a point where a looping :class:`Movie` was showing, the looping movie will be played again
+if it had been stopped.
+
+A :class:`Movie` will only stop movies that it has played, rather than any movie on the associated channel.
+
+When :func:`renpy.set_audio_filter` is called with `immediate` false, the filter will be applied when
+the queued file is played, rather than at some indeterminate time in the future.
+
+The :class:`Frame` displayable is no longer adjusted to be pixel perfect, preventing visual glitches.
+
+When using text shaders to display text with outlines, Ren'Py will create pseudo-glyphs. These pseudo-glyphs
+cover the start and end of each line, and are used to ensure the outlines will be shown.
+
+
+.. _renpy-8.3.2:
+.. _renpy-7.8.2:
+
+8.3.2 / 7.8.2
+=============
+
+Fixes
+-----
+
+Fixed a build issue with 8.3.1 and 7.8.1 that prevented the Android version of Ren'Py from starting properly,
+making games unplayable.
+
+
 .. _renpy-8.3.1:
 .. _renpy-7.8.1:
 
@@ -13,7 +169,16 @@ Changelog (Ren'Py 7.x-)
 Fixes
 -----
 
-Fast-skipping when slow-skipping (or vice versa) now cancels skipping.
+Image keywords (``zorder``, ``behind``, ``at``, ``onlayer``, and ``transform``) may not occur in an expression,
+like a list after ``at``.
+
+Using local shader variables by name in {shader} tags now works.
+
+Textshaders now work with very large sizes and numbers of characters.
+
+Lint avoids checking non-files as files.
+
+The show_done character callback is now called and documented.
 
 The web version of Ren'Py now saves persistent data when the screen is idle for .33 seconds.
 
@@ -25,6 +190,25 @@ being rapidly renamed.
 By default, synchronized start of audio now only occurs on looping channels, like music channels. The default
 can be changed on a channel-by-channel basis by supplying `synchro_start` to :func:`renpy.music.register_channel`.
 
+Other Changes
+-------------
+
+The new :func:`renpy.stop_skipping` cancels slow and fast skip.
+
+Fast-skipping when slow-skipping (or vice versa) now cancels skipping.
+
+On PC, Ren'Py will disable fullscreen when opening a URL.
+
+Ren'Py now correctly clips displayables that are positioned at negative offsets to the parent, provided the
+displayable does not exit the clip rectangle.
+
+:class:`AudioData` now explicitly supports video, and supports properties inside angles (like <from 1.0 to 6.0>).
+
+:var:`config.font_transforms` is now documented. This allows you to define new font transforms for accessibility
+purposes.
+
+The multiple argument to Character is now supplied to :doc:`character_callbacks`.
+
 
 .. _renpy-8.3.0:
 .. _renpy-7.8.0:
@@ -35,7 +219,7 @@ can be changed on a channel-by-channel basis by supplying `synchro_start` to :fu
 Audio Filters
 -------------
 
-This release adds an :doc:`audio filter system <audio_filter>` to Ren'Py, providing a way of processing the sound coming out of
+This release adds an :doc:`audio filter system <audio_filters>` to Ren'Py, providing a way of processing the sound coming out of
 audio channels. The audio filter system is based on webaudio, and includes the following filters:
 
 * Biquad, a way of implementing Lowpass, Highpass, Notch, Peaking, Lowshelf, Highshelf, and Allpass filters.

@@ -432,10 +432,7 @@ fix_dlc("renios", "renios")
             for f in sorted(self, key=lambda a : a.name):
                 f.hash(sha, distributor)
 
-            if PY2:
-                return sha.hexdigest().decode("utf-8")
-            else:
-                return sha.hexdigest()
+            return sha.hexdigest()
 
         def split_by_prefix(self, prefix):
             """
@@ -661,7 +658,6 @@ fix_dlc("renios", "renios")
             # Build the mac app and windows exes.
             self.add_mac_files()
             self.add_windows_files()
-            self.add_main_py()
 
             # Add the main.py.
             self.add_main_py()
@@ -1075,11 +1071,8 @@ fix_dlc("renios", "renios")
 
             rv = self.temp_filename("Info.plist")
 
-            if PY2:
-                plistlib.writePlist(plist, rv)
-            else:
-                with open(rv, "wb") as f:
-                    plistlib.dump(plist, f)
+            with open(rv, "wb") as f:
+                plistlib.dump(plist, f)
 
             return rv
 
@@ -1113,16 +1106,6 @@ fix_dlc("renios", "renios")
                 prefix + "linux-x86_64/" + self.executable_name,
                 os.path.join(config.renpy_base, prefix + "linux-x86_64/renpy"),
                 True)
-
-            armfn = os.path.join(config.renpy_base, prefix + "linux-armv7l/renpy")
-
-            if os.path.exists(armfn):
-
-                self.add_file(
-                    raspi,
-                    prefix + "linux-armv7l/" + self.executable_name,
-                    armfn,
-                    True)
 
             aarch64fn = os.path.join(config.renpy_base, prefix + "linux-aarch64/renpy")
 
@@ -1226,19 +1209,8 @@ fix_dlc("renios", "renios")
                 if os.path.exists(tmp):
                     self.add_file(fl, dst, tmp)
 
-            if PY2:
-
-                if self.build["include_i686"]:
-                    write_exe("lib/py2-windows-i686/renpy.exe", self.exe32, self.exe32, windows_i686)
-                    write_exe("lib/py2-windows-i686/pythonw.exe", "lib/py2-windows-i686/pythonw.exe", "pythonw-32.exe", windows_i686)
-
-                write_exe("lib/py2-windows-x86_64/renpy.exe", self.exe, self.exe, windows)
-                write_exe("lib/py2-windows-x86_64/pythonw.exe", "lib/py2-windows-x86_64/pythonw.exe", "pythonw-64.exe", windows)
-
-            else:
-
-                write_exe("lib/py3-windows-x86_64/renpy.exe", self.exe, self.exe, windows)
-                write_exe("lib/py3-windows-x86_64/pythonw.exe", "lib/py3-windows-x86_64/pythonw.exe", "pythonw-64.exe", windows)
+            write_exe("lib/py3-windows-x86_64/renpy.exe", self.exe, self.exe, windows)
+            write_exe("lib/py3-windows-x86_64/pythonw.exe", "lib/py3-windows-x86_64/pythonw.exe", "pythonw-64.exe", windows)
 
 
         def add_main_py(self):
@@ -1531,11 +1503,12 @@ fix_dlc("renios", "renios")
 
             update = { variant : { "version" : self.update_versions[variant], "base_name" : self.base_name, "files" : update_files, "directories" : update_directories, "xbit" : update_xbit } }
 
-            update_fn = os.path.join(self.destination, filename + ".update.json")
+            update_fn = self.temp_filename(filename + ".update.json")
+
 
             if self.include_update and not format.startswith("app-"):
 
-                with open(update_fn, "wb" if PY2 else "w") as f:
+                with open(update_fn, "w") as f:
                     json.dump(update, f, indent=2)
 
                 if (not dlc) or (format == "update"):
@@ -1565,14 +1538,11 @@ fix_dlc("renios", "renios")
                 in this thread or a background thread.
                 """
 
-                if self.include_update and not self.build_update and not dlc:
-                    if os.path.exists(update_fn):
-                        os.unlink(update_fn)
+                final_update_fn = os.path.join(self.destination, filename + ".update.json")
 
-                if not directory:
-                    file_hash = hash_file(path)
-                else:
-                    file_hash = ""
+                if self.build_update or dlc:
+                    if os.path.exists(update_fn):
+                        shutil.copy(update_fn, final_update_fn)
 
             if format == "tar.bz2" or format == "bare-tar.bz2":
                 pkg = TarPackage(path, "w:bz2")

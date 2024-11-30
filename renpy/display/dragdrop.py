@@ -94,6 +94,9 @@ class Drag(renpy.display.displayable.Displayable, renpy.revertable.RevertableObj
     has been computed, the layout properties are ignored in favor of the
     position stored inside the Drag.
 
+    Transforms should not be applied to a Drag directly. Instead, apply
+    the transform to the child of the Drag.
+
     `d`
         If present, the child of this Drag. Drags use the child style
         in preference to this, if it's not None.
@@ -736,8 +739,12 @@ class Drag(renpy.display.displayable.Displayable, renpy.revertable.RevertableObj
 
     def event(self, ev, x, y, st):
 
+        rv = self.child.event(ev, x, y, st)
+        if rv is not None:
+            return rv
+
         if not self.is_focused():
-            return self.child.event(ev, x, y, st)
+            return None
 
         # Mouse, in parent-relative coordinates.
         par_x = int(self.last_x + x)

@@ -211,12 +211,13 @@ let stop_playing = (c) => {
 
 
     if (c.playing !== null && c.playing.source !== null) {
+
+        renpyAudio.disconnectFilter(c.playing.filter, c.playing.source, c.destination);
+
         try {
             c.playing.source.stop()
         } catch (e) {
         }
-
-        renpyAudio.disconnectFilter(c.playing.filter, c.playing.source, c.destination);
     }
 
     c.playing = c.queued;
@@ -308,6 +309,7 @@ let video_start = (c) => {
 };
 
 let video_pause = (c) => {
+    const p = c.playing;
     if (p.started === null) {
         return;
     }
@@ -713,11 +715,11 @@ renpyAudio.set_pan = (channel, pan, delay) => {
     linearRampToValue(control, control.value, pan, delay);
 };
 
-renpyAudio.replace_audio_filter = (channel, afid) => {
+renpyAudio.replace_audio_filter = (channel, afid, primary) => {
     let c = get_channel(channel);
     let filter = renpyAudio.getFilter(afid);
 
-    if (c.playing) {
+    if (c.playing && primary) {
         renpyAudio.disconnectFilter(c.playing.filter, c.playing.source, c.destination);
         c.playing.filter = filter;
         renpyAudio.connectFilter(filter, c.playing.source, c.destination);

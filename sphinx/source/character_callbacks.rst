@@ -36,10 +36,13 @@ The callback is called with at the keyword arguments:
     This is true if the dialogue causes an interaction to occur.
 
 `type`
-    The type of character (e.g. "nvl", "adv", "balloon").
+    The type of character (e.g. "nvl", "adv", "bubble").
 
 `what`
     The text that is going to be supplied to the what displayable.
+
+`multiple`
+    The `multiple` argument to :func:`Character`.
 
 The "show" and "slow_done" callbacks are also given additional keyword
 arguments:

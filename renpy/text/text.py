@@ -37,6 +37,8 @@ import renpy.text.font as font
 import renpy.text.extras as extras
 from renpy.text.emoji_trie import emoji, UNQUALIFIED
 
+from renpy.gl2.gl2polygon import Polygon
+
 from _renpybidi import log2vis, WRTL, RTL, ON # @UnresolvedImport
 
 BASELINE = -65536
@@ -85,7 +87,6 @@ class TextMeshDisplayable(renpy.display.core.Displayable):
     def render(self, width, height, st, at):
 
         rv = renpy.display.render.Render(self.width, self.height)
-        rv.mesh = self.mesh
 
         rv.add_shader("renpy.texture")
 
@@ -100,7 +101,36 @@ class TextMeshDisplayable(renpy.display.core.Displayable):
 
             rv.add_uniform(k, v)
 
-        rv.absolute_blit(self.tex, (0, 0))
+        if not isinstance(self.tex, renpy.display.render.Render):
+
+            # Single texture case.
+
+            rv.absolute_blit(self.tex, (0, 0))
+            rv.mesh = self.mesh
+
+        else:
+
+            for model, x, y, focus, main in self.tex.children:
+                tex = model.uniforms["tex0"]
+                w, h = tex.get_size()
+
+                # Adjust the size for the texture borders.
+                w -= tex.bl + tex.br
+                h -= tex.bt + tex.bb
+
+                cmesh = self.mesh.crop(Polygon.rectangle(x, y+h, x+w, y))
+
+                cmesh.remap_texture(
+                    0, 0, self.width, self.height,
+                    x - tex.bl, y - tex.bt, w + tex.bl + tex.br, h + tex.bt + tex.bb,
+                )
+
+                cr = renpy.display.render.Render(self.width, self.height)
+                cr.mesh = cmesh
+
+                cr.absolute_blit(tex, (0, 0))
+                rv.absolute_blit(cr, (0, 0))
+
 
         return rv
 
@@ -478,9 +508,6 @@ class DisplayableSegment(object):
 
         self.width, self.height = rend.get_size()
 
-        if isinstance(d, renpy.display.behavior.CaretBlink):
-            self.width = 0
-
         self.hyperlink = ts.hyperlink
         self.cps = ts.cps
         self.ruby_top = ts.ruby_top
@@ -500,7 +527,7 @@ class DisplayableSegment(object):
         glyph.character = 0xfffc
         glyph.ascent = 0
         glyph.line_spacing = h
-        glyph.advance = w
+        glyph.advance = 0 if isinstance(self.d, renpy.display.behavior.CaretBlink) else w
         glyph.width = w
         glyph.shader = self.shader
 
@@ -1194,7 +1221,7 @@ class Layout(object):
 
         def fill_empty_line():
             for i in line:
-                if isinstance(i[0], (TextSegment, SpaceSegment, DisplayableSegment)):
+                if isinstance(i[0], TextSegment):
                     return
 
             line.extend(tss[-1].subsegment(u"\u200B")) # type: ignore
@@ -1217,8 +1244,7 @@ class Layout(object):
                 elif type == TEXT:
 
                     if (text_displayable.mask is not None):
-                        if text != u"\u200b":
-                            text = text_displayable.mask * len(text)
+                        text = text_displayable.mask * len(text)
 
                     line.extend(self.create_text_segments(text, tss[-1], style))
 
@@ -1376,7 +1402,8 @@ class Layout(object):
                     if value[0] in "+-":
                         push().size += int(value)
                     elif value[0] == "*":
-                        push().size = int(float(value[1:]) * push().size)
+                        ts = push()
+                        ts.size = int(float(value[1:]) * ts.size)
                     else:
                         push().size = int(value)
 
@@ -1705,6 +1732,13 @@ class Layout(object):
             The text shader.
         """
 
+        first_shader = ts
+
+        for l in lines:
+            for g in l.glyphs:
+                first_shader = g.shader
+                break
+
         tw, th = tex.get_size()
 
         if lines:
@@ -1715,11 +1749,16 @@ class Layout(object):
         # The number of glyphs in the mesh.
         n_glyphs = sum(len(l.glyphs) for l in lines)
 
-        mesh = renpy.gl2.gl2mesh2.Mesh2.text_mesh(n_glyphs)
+        mesh = renpy.gl2.gl2mesh2.Mesh2.text_mesh(n_glyphs + 2 * len(lines))
 
         # The y coordinate of the top line.
-
         top = 0
+
+        # The index of the last glyph to be shown.
+        last_index = 0
+
+        # The time of the last glyph to be shown.
+        last_time = 0.0
 
         for line in lines:
 
@@ -1736,26 +1775,48 @@ class Layout(object):
                 first_glyph = None
                 last_glyph = None
 
+            left = 0
+
+            if first_glyph:
+                right = first_glyph.x + self.add_left
+            else:
+                right = tw
+
+            # Generate a psuedo-glyph for the text to the left of the line.
+            # These pseudo-glyphs are used to make sure that outlines of lines above and below
+            # are displayed.
+
+            if outline:
+                if right > 0 and (ts == first_shader):
+
+                    cx = 0 + right / 2
+                    cy = outline + line.baseline
+
+                    mesh.add_glyph(
+                        tw, th,
+                        cx, cy,
+                        last_index,
+                        left, top, right, bottom,
+                        last_time, last_time,
+                        line.baseline, line.height - line.baseline,
+                        self.add_left, self.add_top,
+                    )
+
+            # Generate the actual glyphs.
+
             for g in line.glyphs:
+
+                left = right
 
                 if g.time == -1:
                     continue
 
-                # Check that this is the right shader to use.
-                if (g.shader is not ts) and (g.shader != ts):
-                    continue
-
-                # The x-coordinate of the left edge of the glyph.
-                if g is first_glyph:
-                    left = g.x - self.add_left
-                else:
-                    left = g.x + outline
 
                 # The x-coordinate of the right edge of the glyph.
                 if g is last_glyph:
-                    right = g.x + g.advance + outline * 2 + self.add_right
+                    right = g.x + g.advance + outline * 2 + self.add_left + self.add_right
                 else:
-                    right = g.x + g.advance + outline
+                    right = g.x + g.advance + outline + self.add_left
 
                 if left < 0:
                     left = 0
@@ -1764,7 +1825,7 @@ class Layout(object):
 
                 # The center coordinates of the glyph. These aren't the
                 # actual center, but the center of the baseline.
-                cx = g.x + g.advance / 2
+                cx = g.x + g.advance / 2 + self.add_left
                 cy = outline + line.baseline
 
                 duration = g.duration
@@ -1778,24 +1839,45 @@ class Layout(object):
                     left_time = g.time - duration
                     right_time = g.time
 
-                mesh.add_glyph(
-                    tw, th,
-                    cx, cy,
-                    g.index,
-                    left, top, right, bottom,
-                    left_time, right_time,
-                    g.ascent, g.descent,
-                )
+
+                # Check that this is the right shader to use.
+                if (g.shader is ts) or (g.shader == ts):
+
+                    mesh.add_glyph(
+                        tw, th,
+                        cx, cy,
+                        g.index,
+                        left, top, right, bottom,
+                        left_time, right_time,
+                        g.ascent, g.descent,
+                        self.add_left, self.add_top,
+                    )
+
+                last_time = g.time
+                last_index = g.index
+
+            # Handle the empty space to the right of the last glyph.
+            if outline:
+
+                if right < tw and (ts == first_shader):
+
+                    left = right
+                    right = tw
+
+                    cx = left + right / 2
+                    cy = outline + line.baseline
+
+                    mesh.add_glyph(
+                        tw, th,
+                        cx, cy,
+                        last_index,
+                        left, top, right, bottom,
+                        last_time, last_time,
+                        line.baseline, line.height - line.baseline,
+                        self.add_left, self.add_top,
+                    )
 
             top = bottom
-
-        r = renpy.display.render.Render(tw, th)
-        r.absolute_blit(tex, (0, 0))
-        r.mesh = mesh
-        r.add_shader("renpy.texture")
-
-        for i in ts.shader:
-            r.add_shader(i)
 
         main = (depth == 0)
 

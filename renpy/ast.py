@@ -43,10 +43,16 @@ from renpy.parameter import Parameter, Signature, ParameterInfo, ArgumentInfo, \
     apply_arguments, EMPTY_PARAMETERS, EMPTY_ARGUMENTS
 
 
+# The name of the current statement.
+current_statement_name = "init"
+
 def statement_name(name):
     """
     Reports the name of this statement to systems like window auto.
     """
+
+    global current_statement_name
+    current_statement_name = name
 
     for i in renpy.config.statement_callbacks:
         i(name)
@@ -157,10 +163,7 @@ class PyCode(object):
         if isinstance(source, PyExpr):
             loc = (source.filename, source.linenumber, source)
 
-        if PY2:
-            self.py = 2
-        else:
-            self.py = 3
+        self.py = 3
 
         # The source code.
         self.source = source
@@ -1065,11 +1068,34 @@ def show_imspec(imspec, atl=None):
 
     if expression is not None:
         expression = renpy.python.py_eval(expression)
+
+        if not renpy.config.old_show_expression:
+
+            if isinstance(expression, str):
+                name = expression
+
+            else:
+
+                if tag is None:
+
+                    counter = 0
+
+                    while True:
+                        tag = "_show_expression_%d" % counter
+                        if not renpy.exports.showing(tag, layer):
+                            break
+
+                        counter += 1
+
+                name = tag
+
         expression = renpy.easy.displayable(expression)
 
     at_list = [ renpy.python.py_eval(i) for i in at_list ]
 
     layer = renpy.exports.default_layer(layer, tag or name, bool(expression) and (tag is None))
+
+
 
     renpy.config.show(name,
                       at_list=at_list,
@@ -2162,6 +2188,7 @@ EARLY_CONFIG = {
     "check_translate_none",
     "defer_tl_scripts",
     "munge_in_strings",
+    "interface_layer",
 }
 
 define_statements = [ ]

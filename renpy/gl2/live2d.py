@@ -63,8 +63,7 @@ def onetime_init():
     if os.path.exists(fn):
         dll = fn
 
-    if not PY2:
-        dll = dll.encode("utf-8")
+    dll = dll.encode("utf-8")
 
     if not renpy.gl2.live2dmodel.load(dll): # type: ignore
         raise Exception("Could not load Live2D. {} was not found.".format(dll))
@@ -87,9 +86,6 @@ def init():
 
     if live2dmodel is None:
         raise Exception("Live2D has not been built.")
-
-    if not renpy.config.gl2:
-        raise Exception("Live2D requires that config.gl2 be True.")
 
     if renpy.emscripten:
         raise Exception("Live2D is not supported the web platform.")
@@ -863,7 +859,11 @@ class Live2D(renpy.display.displayable.Displayable):
         state.old_expressions = [ (name, shown, hidden) for (name, shown, hidden) in state.old_expressions if (now - hidden) < common.all_expressions[name].fadeout ]
 
         # Determine the list of expressions that are being shown by this displayable.
-        expressions = list(self.used_nonexclusive) # type: ignore
+        if self.used_nonexclusive is None:
+            expressions = [ ]
+        else:
+            expressions = list(self.used_nonexclusive) # type: ignore
+
         if self.expression:
             expressions.append(self.expression)
 
@@ -906,6 +906,12 @@ class Live2D(renpy.display.displayable.Displayable):
             raise Exception("Unknown blend mode {!r}".format(blend))
 
         self.common.model.blend_parameter(name, blend, value, weight)
+
+    def blend_opacity(self, name, blend, value, weight=1.0):
+        if blend not in ("Add", "Multiply", "Overwrite"):
+            raise Exception("Unknown blend mode {!r}".format(blend))
+
+        self.common.model.blend_opacity(name, blend, value, weight)
 
     def render(self, width, height, st, at):
 

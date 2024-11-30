@@ -154,10 +154,6 @@ cython("renpy.style")
 
 cython("renpy.encryption")
 
-# renpy.compat
-if PY2:
-    cython("renpy.compat.dictviews")
-
 # renpy.styledata
 cython("renpy.styledata.styleclass")
 cython("renpy.styledata.stylesets")
@@ -173,12 +169,6 @@ cython("renpy.display.quaternion", libs=[ 'm' ])
 
 cython("renpy.uguu.gl", libs=sdl)
 cython("renpy.uguu.uguu", libs=sdl)
-
-cython("renpy.gl.gldraw", libs=sdl)
-cython("renpy.gl.gltexture", libs=sdl)
-cython("renpy.gl.glenviron_shader", libs=sdl)
-cython("renpy.gl.glrtt_copy", libs=sdl)
-cython("renpy.gl.glrtt_fbo", libs=sdl)
 
 cython("renpy.gl2.gl2mesh")
 cython("renpy.gl2.gl2mesh2")
@@ -201,12 +191,10 @@ cython(
     [ "ftsupport.c", "ttgsubtable.c" ],
     libs=sdl + [ 'freetype', 'z', 'm' ])
 
-if not (PY2 and emscripten):
-
-    cython(
-        "renpy.text.hbfont",
-        [ "ftsupport.c" ],
-        libs=sdl + [ 'harfbuzz', 'freetype', 'z', 'm' ])
+cython(
+    "renpy.text.hbfont",
+    [ "ftsupport.c" ],
+    libs=sdl + [ 'harfbuzz', 'freetype', 'z', 'm' ])
 
 generate_all_cython()
 find_unnecessary_gen()

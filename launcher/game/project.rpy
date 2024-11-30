@@ -116,12 +116,31 @@ init python in project:
 
             try:
                 with open(os.path.join(self.path, "project.json"), "w") as f:
-                    json.dump(self.data, f)
+                    json.dump(self.data, f, indent=2)
             except Exception:
                 self.load_data()
 
         def update_data(self):
             data = self.data
+
+            data.setdefault("renpy_launcher",
+            {
+                "open_directory":
+                {
+                    "game": "game",
+                    "base": ".",
+                    "images": "game/images",
+                    "audio": "game/audio",
+                    "gui": "game/gui"
+                },
+                "edit_file":
+                {
+                    "script.rpy": "game/script.rpy",
+                    "options.rpy": "game/options.rpy",
+                    "gui.rpy": "game/gui.rpy",
+                    "screens.rpy": "game/screens.rpy"
+                }
+            })
 
             data.setdefault("build_update", False)
             data.setdefault("packages", [ "pc", "mac" ])
@@ -351,12 +370,6 @@ init python in project:
                     l += 1
 
                     line = line[:1024]
-
-                    if PY2:
-                        try:
-                            line = line.decode("utf-8")
-                        except Exception:
-                            continue
 
                     m = re.search(r"#\s*TODO(\s*:\s*|\s+)(.*)", line, re.I)
 

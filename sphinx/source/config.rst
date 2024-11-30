@@ -769,7 +769,7 @@ Media (Music, Sound, and Video)
 
 .. var:: config.skip_sounds = False
 
-    If False, non-looping audio will not be played when Ren'Py is
+    If True, non-looping audio will not be played when Ren'Py is
     skipping.
 
 .. var:: config.sound = True
@@ -1629,6 +1629,21 @@ Text and Fonts
     simplify and shorten ``{font}`` tags, and gives them access to the
     :ref:`fontgroup` feature.
 
+.. var:: config.font_transforms = { ... }
+
+    This is used to create new font transforms for accessibility purposes. The font transforms can be
+    activated by :func:`Preferences` using "font transform" as the first argument.
+
+    The dictionary maps strings giving the nam use to a function. The function is called with a font
+    or :class:`FontGroup` as the only argument, and is expected to return a font or font group. For
+    example, the dejavusans transform is defined as::
+
+        init python:
+            def dejavusans(f):
+                return "DejaVuSans.ttf"
+
+            config.font_transforms["dejavusans"] = dejavusans
+
 .. var:: config.font_replacement_map = { }
 
     This is a map from (font, bold, italics) to (font, bold, italics),
@@ -1923,6 +1938,17 @@ Translation
 
     A list of named stores that are cleaned to their state at the end of
     the init phase when the translation language changes.
+
+.. var:: config.translate_additional_strings_callbacks = [ ]
+
+    A list of callbacks that are called when the translation system is searching for
+    strings. Each callback is expected to be return and iterable or iterator of
+    (filename, linenumber, string) tuples. The strings will then be treated as
+    additional strings to translate.
+
+    The line number doesn't need to correspond to an actual line in the file, but is used to control
+    the order in which string translations are added to transdlation files.
+
 
 .. var:: config.translate_ignore_who = [ ]
 

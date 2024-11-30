@@ -358,6 +358,16 @@ def is_skipping():
     return not not renpy.config.skipping
 
 
+def stop_skipping():
+    """
+    :doc: other
+
+    Stops skipping, if Ren'Py is currently skipping.
+    """
+
+    renpy.config.skipping = None
+
+
 def is_init_phase():
     """
     :doc: other
@@ -410,3 +420,13 @@ def get_game_runtime():
     """
 
     return renpy.game.contexts[0].runtime
+
+def get_statement_name():
+    """
+    :doc: other
+
+    Get the name of the current statement, a string like "say", "say-nvl", or "window hide". This is the
+    same statement name used with :var:`config.statement_callbacks`.
+    """
+
+    return renpy.ast.current_statement_name

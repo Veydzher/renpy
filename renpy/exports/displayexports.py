@@ -492,7 +492,8 @@ def show(name, at_list=[ ], layer=None, what=None, zorder=None, tag=None, behind
         img._unique()
 
     # Update the list of images we have ever seen.
-    renpy.game.persistent._seen_images[tuple(str(i) for i in name)] = True
+    if renpy.exports.is_seen_allowed():
+        renpy.game.persistent._seen_images[tuple(str(i) for i in name)] = True
 
     if tag and munge_name:
         name = (tag,) + name[1:]
@@ -1277,9 +1278,6 @@ def get_refresh_rate(precision=5):
         75, and 120), this likely will improve accuracy. Setting precision
         to 1 disables this.
     """
-
-    if PY2:
-        precision = float(precision)
 
     info = renpy.display.get_info()
     rv = info.refresh_rate # type: ignore

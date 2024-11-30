@@ -96,7 +96,7 @@ init label _errorhandling:
         adjust_spacing True
         emoji_font "TwemojiCOLRv0.ttf"
         prefer_emoji True
-        shaper ("harfbuzz" if (not PY2) else "freetype")
+        shaper "harfbuzz"
 
         # Window properties
         background None
@@ -284,11 +284,7 @@ init python:
 
     def _error_hyperlink_function(target):
         if target.startswith("http:") or target.startswith("https:"):
-            try:
-                import webbrowser
-                webbrowser.open(target)
-            except Exception:
-                pass
+            renpy.open_url(target)
 
         if target.startswith("edit:"):
             prefix, line, filename = target.split(":", 2)
@@ -565,7 +561,15 @@ init python:
 
         def __call__(self):
             try:
-                renpy.launch_editor([ self.filename ], self.line, transient=1)
+                if renpy.android:
+                    try:
+                        import jnius
+                        activity = jnius.autoclass("org.renpy.android.PythonSDLActivity")
+                        activity.openEditor(renpy.exports.fsencode(self.filename))
+                    except Exception:
+                        traceback.print_exc()
+                else:
+                    renpy.launch_editor([ self.filename ], self.line, transient=1)
             except Exception:
                 pass
 
@@ -674,9 +678,10 @@ init python:
 # added arguments.
 screen _exception_actions(traceback_fn, tt, *args):
 
-    textbutton _("Open"):
-        action _EditFile(traceback_fn)
-        hovered tt.action(_("Opens the traceback.txt file in a text editor."))
+    if not any([renpy.ios, renpy.emscripten]):
+        textbutton _("Open"):
+            action _EditFile(traceback_fn)
+            hovered tt.action(_("Opens the traceback.txt file in a text editor."))
 
     textbutton _("Copy BBCode"):
         action _CopyFile(traceback_fn, u"[code]\n{}[/code]\n")

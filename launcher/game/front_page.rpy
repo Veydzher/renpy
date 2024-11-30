@@ -158,12 +158,8 @@ screen front_page_project:
 
                 frame style "l_indent":
                     has vbox
-
-                    textbutton "game" action OpenDirectory(os.path.join(p.path, "game"), absolute=True)
-                    textbutton "base" action OpenDirectory(os.path.join(p.path, "."), absolute=True)
-                    textbutton "images" action OpenDirectory(os.path.join(p.path, "game/images"), absolute=True)
-                    textbutton "audio" action OpenDirectory(os.path.join(p.path, "game/audio"), absolute=True)
-                    textbutton "gui" action OpenDirectory(os.path.join(p.path, "game/gui"), absolute=True)
+                    for button_name, path in p.data["renpy_launcher"]["open_directory"].items():
+                        textbutton button_name action OpenDirectory(os.path.join(p.path, path), absolute=True)
 
             vbox:
                 if persistent.show_edit_funcs:
@@ -173,10 +169,8 @@ screen front_page_project:
                     frame style "l_indent":
                         has vbox
 
-                        textbutton "script.rpy" action editor.Edit("game/script.rpy", check=True)
-                        textbutton "options.rpy" action editor.Edit("game/options.rpy", check=True)
-                        textbutton "gui.rpy" action editor.Edit("game/gui.rpy", check=True)
-                        textbutton "screens.rpy" action editor.Edit("game/screens.rpy", check=True)
+                        for button_name, path in p.data["renpy_launcher"]["edit_file"].items():
+                            textbutton button_name action editor.Edit(path, check=True)
 
                         if editor.CanEditProject():
                             textbutton _("Open project") action editor.EditProject()
@@ -216,7 +210,7 @@ screen front_page_project:
 
                 textbutton _("Android") action Jump("android")
                 textbutton _("iOS") action Jump("ios")
-                textbutton _("Web") + " " + _("(Beta)") action Jump("web")
+                textbutton _("Web") action Jump("web")
                 textbutton _("Generate Translations") action Jump("translate")
                 textbutton _("Extract Dialogue") action Jump("extract_dialogue")
 
